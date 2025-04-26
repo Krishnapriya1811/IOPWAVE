@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GlaucoGuard - Glaucoma Monitoring System</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-auth.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-database.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <style>
+    :root {
+      --primary: #2e8b57;
+      --secondary: #88c488;
+      --light: #e0f0e0;
+      --dark: #1a5130;
+      --text: #333;
+      --warning: #f39c12;
+      --danger: #e74c3c;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: #f8fcf8;
+      color: var(--text);
+      line-height: 1.6;
+    }
+    
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 0;
+    }
+    
+    header {
+      background-color: var(--primary);
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo-icon {
+      margin-right: 10px;
+      font-size: 1.8rem;
+    }
+    
+    .nav-links {
+      display: flex;
+      list-style: none;
+    }
+    
+    .nav-links li {
+      margin-left: 1.5rem;
+    }
+    
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-links a:hover {
+      color: var(--light);
+    }
+    
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-block;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--dark);
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+    
+    .btn-outline:hover {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    .btn-warning {
+      background-color: var(--warning);
+      color: white;
+      border: none;
+    }
+    
+    .btn-danger {
+      background-color: var(--danger);
+      color: white;
+      border: none;
+    }
+    
+    section {
+      padding: 3rem 0;
+    }
+    
+    h1, h2, h3 {
+      color: var(--dark);
+      margin-bottom: 1rem;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+    }
+    
+    h2 {
+      font-size: 2rem;
+    }
+    
+    h3 {
+      font-size: 1.5rem;
+    }
+    
+    p {
+      margin-bottom: 1.5rem;
+    }
+    
+    .hero {
+      background-color: var(--light);
+      padding: 4rem 0;
+      text-align: center;
+    }
+    
+    .hero h1 {
+      margin-bottom: 1.5rem;
+    }
+    
+    .hero p {
+      font-size: 1.2rem;
+      max-width: 800px;
+      margin: 0 auto 2rem;
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      transition: transform 0.3s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .card-title {
+      color: var(--primary);
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+    
+    .team-member {
+      text-align: center;
+    }
+    
+    .team-member img {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 1rem;
+    }
+    
+    .team-member h3 {
+      margin-bottom: 0.5rem;
+    }
+    
+    .team-member p {
+      color: #666;
+    }
+    
+    footer {
+      background-color: var(--dark);
+      color: white;
+      padding: 2rem 0;
+      text-align: center;
+    }
+    
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    
+    .chart-container {
+      width: 100%;
+      height: 400px;
+    }
+    
+    .iop-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 2rem;
+      background-color: var(--light);
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+    
+    .iop-value {
+      font-size: 4rem;
+      font-weight: bold;
+      margin: 1rem 0;
+      color: var(--primary);
+    }
+    
+    .iop-status {
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    
+    .status-normal {
+      background-color: #27ae60;
+      color: white;
+    }
+    
+    .status-warning {
+      background-color: var(--warning);
+      color: white;
+    }
+    
+    .status-danger {
+      background-color: var(--danger);
+      color: white;
+    }
+    
+    form {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    
+    .login-container {
+      display: flex;
+      height: 100vh;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--light);
+    }
+    
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      padding: 2rem;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    .login-title {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .hidden {
+      display: none;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+      
+      .nav-links {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="login-page" class="login-container">
+    <div class="login-card">
+      <h2 class="login-title">GlaucoGuard</h2>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="Enter your email" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter your password" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+        <p style="text-align: center; margin-top: 1rem;">Don't have an account? <a href="#" id="signup-link">Sign up</a></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="main-content" class="hidden">
+    <header>
+      <div class="container">
+        <nav>
+          <div class="logo">
+            <span class="logo-icon">👁</span>
+            <span>GlaucoGuard</span>
+          </div>
+          <ul class="nav-links">
+            <li><a href="#" class="nav-link" data-page="home">Home</a></li>
+            <li><a href="#" class="nav-link" data-page="dashboard">Dashboard</a></li>
+            <li><a href="#" id="logout-btn">Logout</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div id="home-page">
+      <section class="hero">
+        <div class="container">
+          <h1>Welcome to GlaucoGuard</h1>
+          <p>An innovative IoT-based glaucoma monitoring system that helps detect and track Intraocular Pressure (IOP) for early glaucoma diagnosis and management.</p>
+          <a href="#" class="btn btn-primary nav-link" data-page="dashboard">View Dashboard</a>
+        </div>
+      </section>
+
+      <section id="about">
+        <div class="container">
+          <h2>About Glaucoma</h2>
+          <div class="card">
+            <p>Glaucoma is a group of eye conditions that damage the optic nerve, which is vital for good vision. This damage is often caused by abnormally high pressure in your eye (intraocular pressure or IOP). Glaucoma is one of the leading causes of blindness for people over the age of 60.</p>
+            <p>It can occur at any age but is more common in older adults. Many forms of glaucoma have no warning signs, and the effect is so gradual that you may not notice a change in vision until the condition is at an advanced stage.</p>
+            <p>Because vision loss due to glaucoma can't be recovered, it's important to have regular eye exams that include measurements of your eye pressure so a diagnosis can be made in its early stages and treated appropriately.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="identification">
+        <div class="container">
+          <h2>How to Identify Glaucoma</h2>
+          <div class="grid">
+            <div class="card">
+              <h3 class="card-title">Early Symptoms</h3>
+              <ul>
+                <li>Patchy blind spots in your side (peripheral) or central vision, frequently in both eyes</li>
+                <li>Tunnel vision in the advanced stages</li>
+                <li>Severe headache</li>
+                <li>Eye pain</li>
+                <li>Blurred vision</li>
+                <li>Halos around lights</li>
+                <li>Eye redness</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3 class="card-title">Risk Factors</h3>
+              <ul>
+                <li>High intraocular pressure (IOP)</li>
+                <li>Age over 60</li>
+                <li>Family history of glaucoma</li>
+                <li>Medical conditions (diabetes, heart disease, high blood pressure)</li>
+                <li>Eye injuries</li>
+                <li>Long-term use of corticosteroid medications</li>
+                <li>Thin corneas</li>
+                <li>Extreme nearsightedness or farsightedness</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3 class="card-title">Diagnostic Tests</h3>
+              <ul>
+                <li>Tonometry: Measures intraocular pressure</li>
+                <li>Ophthalmoscopy: Examines the optic nerve</li>
+                <li>Perimetry: Tests peripheral vision</li>
+                <li>Gonioscopy: Inspects the drainage angle</li>
+                <li>Pachymetry: Measures corneal thickness</li>
+                <li>OCT: Optical Coherence Tomography</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="existing-models">
+        <div class="container">
+          <h2>Existing Monitoring Models</h2>
+          <div class="grid">
+            <div class="card">
+              <h3 class="card-title">Goldmann Applanation Tonometry</h3>
+              <p>The gold standard for measuring IOP, requiring a clinical setting. It involves direct contact with the cornea and provides accurate readings but needs a trained professional.</p>
+            </div>
+            <div class="card">
+              <h3 class="card-title">Rebound Tonometry</h3>
+              <p>Uses a probe that makes a momentary contact with the cornea. More portable than Goldmann but still requires clinical expertise for accurate measurements.</p>
+            </div>
+            <div class="card">
+              <h3 class="card-title">Non-contact Tonometry</h3>
+              <p>Uses a puff of air to measure IOP. Less accurate than contact methods but convenient for screening purposes.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="our-model">
+        <div class="container">
+          <h2>Our IoT-Based Model</h2>
+          <div class="card">
+            <h3 class="card-title">GlaucoGuard System</h3>
+            <p>Our innovative system uses ESP32 microcontroller coupled with ultrasonic sensors and pressure measurement to provide a non-invasive, real-time monitoring solution for intraocular pressure.</p>
+            <p>The system measures acoustic radiation force (ARF) and calculates corneal deformation, which is directly related to IOP. This data is then transmitted to a cloud database for analysis and monitoring.</p>
+            <p>Key features include:</p>
+            <ul>
+              <li>Real-time IOP monitoring</li>
+              <li>Cloud-based data storage and analysis</li>
+              <li>Remote access to IOP data</li>
+              <li>Early detection of IOP spikes</li>
+              <li>User-friendly web interface</li>
+              <li>Affordable and accessible technology</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="team">
+        <div class="container">
+          <h2>Our Team</h2>
+          <div class="grid">
+            <div class="card team-member">
+              <img src="/api/placeholder/150/150" alt="Team Member 1">
+              <h3>Krishnapriya S</h3>
+              <p>Electronics and Communication Engineer</p>
+            </div>
+            <div class="card team-member">
+              <img src="/api/placeholder/150/150" alt="Team Member 2">
+              <h3>MadhUmitha P</h3>
+              <p>Electronics and Communication Engineer</p>
+            </div>
+            <div class="card team-member">
+              <img src="/api/placeholder/150/150" alt="Team Member 3">
+              <h3>MadhUmitha S</h3>
+              <p>Electronics and Communication Engineer</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="dashboard-page" class="hidden">
+      <section>
+        <div class="container">
+          <h1>Glaucoma Monitoring Dashboard</h1>
+          <div class="iop-display">
+            <h2>Current IOP Reading</h2>
+            <div class="iop-value" id="current-iop">--</div>
+            <div class="iop-status" id="iop-status">Waiting for data...</div>
+          </div>
+          
+          <div class="dashboard">
+            <div class="card">
+              <h3 class="card-title">IOP History</h3>
+              <div class="chart-container">
+                <canvas id="iop-chart"></canvas>
+              </div>
+            </div>
+            
+            <div class="card">
+              <h3 class="card-title">Manual IOP Check</h3>
+              <form id="manual-iop-form">
+                <div class="form-group">
+                  <label for="manual-iop">Enter IOP Value (mmHg)</label>
+                  <input type="number" id="manual-iop" min="0" max="80" step="0.1" required>
+                </div>
+                <div class="form-group">
+                  <label for="age">Age</label>
+                  <input type="number" id="age" min="0" max="120" required>
+                </div>
+                <div class="form-group">
+                  <label for="family-history">Family History of Glaucoma</label>
+                  <select id="family-history" required>
+                    <option value="">Select...</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="medical-conditions">Medical Conditions</label>
+                  <select id="medical-conditions" multiple>
+                    <option value="diabetes">Diabetes</option>
+                    <option value="hypertension">Hypertension</option>
+                    <option value="heart-disease">Heart Disease</option>
+                    <option value="none">None</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Check Risk</button>
+              </form>
+              <div id="risk-result" style="margin-top: 1.5rem;"></div>
+            </div>
+          </div>
+          
+          <div class="card">
+            <h3 class="card-title">Device Status</h3>
+            <div id="device-status">
+              <p>Current Status: <span id="status-text">Loading...</span></p>
+              <p>Last Updated: <span id="last-updated">-</span></p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      <div class="container">
+        <p>&copy; 2025 GlaucoGuard. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAg-sw9I-0YEN4rZmiXeWv5jbFar28MLPo",
+      databaseURL: "https://solar-panel-211c6-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "solar-panel-211c6",
+      appId: "1:307495629699:web:b9d0e1c2a9b7b8c71d307f"
+    };
+    
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    
+    // DOM Elements
+    const loginPage = document.getElementById('login-page');
+    const mainContent = document.getElementById('main-content');
+    const homePage = document.getElementById('home-page');
+    const dashboardPage = document.getElementById('dashboard-page');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const logoutBtn = document.getElementById('logout-btn');
+    const loginForm = document.getElementById('login-form');
+    const signupLink = document.getElementById('signup-link');
+    const currentIopElement = document.getElementById('current-iop');
+    const iopStatusElement = document.getElementById('iop-status');
+    const deviceStatusElement = document.getElementById('status-text');
+    const lastUpdatedElement = document.getElementById('last-updated');
+    const manualIopForm = document.getElementById('manual-iop-form');
+    const riskResultElement = document.getElementById('risk-result');
+    
+    // Chart setup
+    let iopChart;
+    let iopData = {
+      labels: [],
+      datasets: [{
+        label: 'IOP (mmHg)',
+        data: [],
+        borderColor: '#2e8b57',
+        backgroundColor: 'rgba(46, 139, 87, 0.1)',
+        borderWidth: 2,
+        tension: 0.4
+      }]
+    };
+    
+    // Function to initialize the chart
+    function initChart() {
+      const ctx = document.getElementById('iop-chart').getContext('2d');
+      iopChart = new Chart(ctx, {
+        type: 'line',
+        data: iopData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: false,
+              suggestedMin: 10,
+              suggestedMax: 30,
+              title: {
+                display: true,
+                text: 'IOP (mmHg)'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Time'
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Function to update the chart with new IOP data
+    function updateChart(timestamp, iop) {
+      const date = new Date(timestamp);
+      const timeString = date.toLocaleTimeString();
+      
+      // Add new data point
+      iopData.labels.push(timeString);
+      iopData.datasets[0].data.push(iop);
+      
+      // Keep only the last 10 data points for clarity
+      if (iopData.labels.length > 10) {
+        iopData.labels.shift();
+        iopData.datasets[0].data.shift();
+      }
+      
+      // Update the chart
+      iopChart.update();
+    }
+    
+    // Function to determine IOP status
+    function getIopStatus(iop) {
+      if (iop < 10) {
+        return {
+          text: 'Low IOP',
+          class: 'status-warning'
+        };
+      } else if (iop >= 10 && iop <= 21) {
+        return {
+          text: 'Normal IOP',
+          class: 'status-normal'
+        };
+      } else {
+        return {
+          text: 'High IOP - Risk of Glaucoma',
+          class: 'status-danger'
+        };
+      }
+    }
+    
+    // Function to update the dashboard with IOP data
+    function updateIopDisplay(iop) {
+      currentIopElement.textContent = iop.toFixed(1);
+      
+      const status = getIopStatus(iop);
+      iopStatusElement.textContent = status.text;
+      iopStatusElement.className = 'iop-status ' + status.class;
+    }
+    
+    // Function to calculate glaucoma risk based on manual input
+    function calculateGlaucomaRisk(iop, age, familyHistory, medicalConditions) {
+      let riskScore = 0;
+      
+      // IOP risk
+      if (iop > 21) riskScore += 3;
+      else if (iop > 18) riskScore += 1;
+      
+      // Age risk
+      if (age > 60) riskScore += 2;
+      else if (age > 40) riskScore += 1;
+      
+      // Family history risk
+      if (familyHistory === 'yes') riskScore += 2;
+      
+      // Medical conditions risk
+      if (medicalConditions.length > 0 && !medicalConditions.includes('none')) {
+        riskScore += medicalConditions.length;
+      }
+      
+      // Risk categories
+      let riskLevel, riskClass, recommendation;
+      if (riskScore <= 2) {
+        riskLevel = 'Low Risk';
+        riskClass = 'status-normal';
+        recommendation = 'Routine eye check-ups every 1-2 years are recommended.';
+      } else if (riskScore <= 5) {
+        riskLevel = 'Moderate Risk';
+        riskClass = 'status-warning';
+        recommendation = 'Regular eye check-ups every 6-12 months are recommended. Monitor your IOP regularly.';
+      } else {
+        riskLevel = 'High Risk';
+        riskClass = 'status-danger';
+        recommendation = 'Please consult an ophthalmologist as soon as possible for a comprehensive eye examination.';
+      }
+      
+      return {
+        score: riskScore,
+        level: riskLevel,
+        class: riskClass,
+        recommendation: recommendation
+      };
+    }
+    
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize chart
+      initChart();
+      
+      // Navigation
+      navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const page = this.getAttribute('data-page');
+          showPage(page);
+        });
+      });
+      
+      // Login form
+      loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
+        // Simulate authentication (in a real app, use Firebase Auth)
+        if (email && password) {
+          loginPage.classList.add('hidden');
+          mainContent.classList.remove('hidden');
+          showPage('home');
+        }
+      });
+      
+      // Signup link
+      signupLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('In a real app, this would open a signup form. For demo purposes, just use any email and password.');
+      });
+      
+      // Logout button
+      logoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        mainContent.classList.add('hidden');
+        loginPage.classList.remove('hidden');
+        document.getElementById('email').value = '';
+        document.getElementById('password').value = '';
+      });
+      
+      // Manual IOP form
+      manualIopForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const iop = parseFloat(document.getElementById('manual-iop').value);
+        const age = parseInt(document.getElementById('age').value);
+        const familyHistory = document.getElementById('family-history').value;
+        
+        const medicalConditionsSelect = document.getElementById('medical-conditions');
+        const medicalConditions = Array.from(medicalConditionsSelect.selectedOptions).map(option => option.value);
+        
+        const risk = calculateGlaucomaRisk(iop, age, familyHistory, medicalConditions);
+        
+        riskResultElement.innerHTML = `
+          <div class="card">
+            <h4>Risk Assessment</h4>
+            <p>Based on your input:</p>
+            <ul>
+              <li>IOP: ${iop} mmHg</li>
+              <li>Age: ${age}</li>
+              <li>Family History: ${familyHistory === 'yes' ? 'Yes' : 'No'}</li>
+              <li>Medical Conditions: ${medicalConditions.join(', ')}</li>
+            </ul>
+            <div class="iop-status ${risk.class}" style="display: inline-block; margin-top: 1rem;">
+              ${risk.level}
+            </div>
+            <p style="margin-top: 1rem;">${risk.recommendation}</p>
+          </div>
+        `;
+      });
+      
+      // Listen for Firebase data changes
+      database.ref('/').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          // Update device status
+          if (data.status) {
+            deviceStatusElement.textContent = data.status;
+          }
+          
+          // Update IOP data
+          if (data.Final_IOP) {
+            updateIopDisplay(data.Final_IOP);
+            updateChart(Date.now(), data.Final_IOP);
+          } else if (data.Dynamic_IOP) {
+            updateIopDisplay(data.Dynamic_IOP);
+            updateChart(Date.now(), data.Dynamic_IOP);
+          }
+          
+          // Update last updated time
+          lastUpdatedElement.textContent = new Date().toLocaleString();
+        }
+      });
+    });
+    
+    // Function to show a specific page
+    function showPage(page) {
+      homePage.classList.add('hidden');
+      dashboardPage.classList.add('hidden');
+      
+      if (page === 'home') {
+        homePage.classList.remove('hidden');
+      } else if (page === 'dashboard') {
+        dashboardPage.classList.remove('hidden');
+      }
+    }
+  </script>
+</body>
+</html>
