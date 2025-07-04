@@ -804,21 +804,25 @@
       });
       
       // Listen for Firebase data changes
-      database.ref('/').on('value', (snapshot) => {
+      database.ref('/IOP_Measurements').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
-          // Update device status
-          if (data.status) {
-            deviceStatusElement.textContent = data.status;
+          // Update device status based on measurement progress
+          if (data.Completed) {
+            deviceStatusElement.textContent = 'Measurement Complete';
+          } else if (data.Count) {
+            deviceStatusElement.textContent = `Measuring... (${data.Count}/5 readings)`;
+          } else {
+            deviceStatusElement.textContent = 'Ready for measurement';
           }
           
-          // Update IOP data
-          if (data.Final_IOP) {
-            updateIopDisplay(data.Final_IOP);
-            updateChart(Date.now(), data.Final_IOP);
-          } else if (data.Dynamic_IOP) {
-            updateIopDisplay(data.Dynamic_IOP);
-            updateChart(Date.now(), data.Dynamic_IOP);
+          // Update IOP data - prioritize final average, then current measurement
+          if (data.AverageIOP) {
+            updateIopDisplay(data.AverageIOP);
+            updateChart(Date.now(), data.AverageIOP);
+          } else if (data.LastIOP) {
+            updateIopDisplay(data.LastIOP);
+            updateChart(Date.now(), data.LastIOP);
           }
           
           // Update last updated time
